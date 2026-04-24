@@ -9,6 +9,9 @@ import SearchRoomsPage from './pages/SearchRoomsPage.jsx'
 import MyReservationsPage from './pages/MyReservationsPage.jsx'
 import RequireAuth from './auth/RequireAuth.jsx'
 
+import RequireAdmin from './auth/RequireAdmin.jsx'
+import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx'
+
 export default function App() {
   return (
     <Routes>
@@ -27,6 +30,9 @@ export default function App() {
             </RequireAuth>
           }
         />
+        <Route path='/admin' element={<RequireAdmin />}>
+          <Route path='dashboard' element={<AdminDashboardPage />} />
+        </Route>
       </Route>
     </Routes>
   )

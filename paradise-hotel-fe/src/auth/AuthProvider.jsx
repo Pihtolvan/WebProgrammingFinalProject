@@ -10,18 +10,34 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+  const init = async () => {
     const raw = localStorage.getItem(STORAGE_KEY)
 
     if (raw) {
-      const saved = JSON.parse(raw)
-      if (saved?.token) {
-        setToken(saved.token)
-        setAuthToken(saved.token)
+      try {
+        const saved = JSON.parse(raw)
+        if (saved?.token) {
+          setToken(saved.token)
+          setAuthToken(saved.token)
+
+          // hydrate user on refresh
+          const res = await api.get('/auth/me')
+          setUser(res.data.user)
+        }
+      } catch {
+        // corrupted storage or invalid/expired token
+        localStorage.removeItem(STORAGE_KEY)
+        setAuthToken(null)
+        setToken(null)
+        setUser(null)
       }
     }
 
     setLoading(false)
-  }, [])
+  }
+
+  init()
+}, [])
 
   useEffect(() => {
     if (token) {
