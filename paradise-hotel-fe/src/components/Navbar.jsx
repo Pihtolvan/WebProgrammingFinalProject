@@ -29,6 +29,9 @@ export default function Navbar() {
 
           {token ? (
             <>
+              <Button component={RouterLink} to='/reservations' color='inherit'>
+                My Reservations
+              </Button>
               <Button onClick={logout} color='inherit' variant='outlined'>
                 Logout
               </Button>
