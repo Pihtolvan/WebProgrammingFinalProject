@@ -1,29 +1,55 @@
-import { Link } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router-dom'
 import useAuth from '../auth/useAuth.js'
+import AppBar from '@mui/material/AppBar'
+import Toolbar from '@mui/material/Toolbar'
+import Button from '@mui/material/Button'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 
 export default function Navbar() {
   const { user, token, logout } = useAuth()
 
   return (
-    <nav style={{ display: 'flex', gap: 12, padding: 12, borderBottom: '1px solid #ddd' }}>
-      <Link to='/'>Home</Link>
-      <Link to='/about'>About</Link>
-      <Link to='/search'>Search rooms</Link>
+    <AppBar position='static' color='transparent' elevation={0}>
+      <Toolbar sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Typography variant='h6' sx={{ flexGrow: 1 }}>
+          Paradise Hotel
+        </Typography>
 
-      {token ? (
-        <>
-          <Link to='/reservations'>My reservations</Link>
-          {user?.role === 'admin' ? <Link to='/admin/dashboard'>Admin</Link> : null}
-          <button type='button' onClick={logout}>
-            Logout
-          </button>
-        </>
-      ) : (
-        <>
-          <Link to='/register'>Register</Link>
-          <Link to='/login'>Login</Link>
-        </>
-      )}
-    </nav>
+        <Stack direction='row' spacing={1}>
+          <Button component={RouterLink} to='/' color='inherit'>
+            Home
+          </Button>
+          <Button component={RouterLink} to='/about' color='inherit'>
+            About
+          </Button>
+          <Button component={RouterLink} to='/search' color='inherit'>
+            Search rooms
+          </Button>
+
+          {token ? (
+            <>
+              <Button onClick={logout} color='inherit' variant='outlined'>
+                Logout
+              </Button>
+              {user?.role === 'admin' ? (
+                <Button component={RouterLink} to='/admin/dashboard' color='inherit'>
+                  Admin
+                </Button>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Button component={RouterLink} to='/register' color='inherit'>
+                Register
+              </Button>
+              <Button component={RouterLink} to='/login' color='inherit' variant='contained'>
+                Login
+              </Button>
+            </>
+          )}
+        </Stack>
+      </Toolbar>
+    </AppBar>
   )
 }
