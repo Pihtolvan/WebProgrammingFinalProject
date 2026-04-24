@@ -1,0 +1,16 @@
+services:
+  paradise-hotel-api:
+    build: .
+    container_name: paradise-hotel-api
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      JWT_SECRET: paradise-secret
+      FRONTEND_URL: http://localhost:5173
+      DB_PATH: /app/data/paradise.sqlite
+    volumes:
+      - paradise_hotel_data:/app/data
+
+volumes:
+  paradise_hotel_data:
