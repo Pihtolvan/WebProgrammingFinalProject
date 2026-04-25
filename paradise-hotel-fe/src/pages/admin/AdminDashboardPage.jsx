@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import PageContainer from '../../components/PageContainer.jsx'
 import { api } from '../../api/api.js'
+import AdminNav from '../../components/AdminNav.jsx'
 
 import Typography from '@mui/material/Typography'
 import Stack from '@mui/material/Stack'
@@ -50,6 +51,7 @@ export default function AdminDashboardPage() {
     <PageContainer>
       <Stack spacing={2}>
         <Typography variant='h4'>Admin dashboard</Typography>
+        <AdminNav />
 
         {error ? <Alert severity='error'>{error}</Alert> : null}
 
