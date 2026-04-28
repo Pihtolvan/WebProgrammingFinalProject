@@ -6,12 +6,17 @@ import AuthProvider from './auth/AuthProvider.jsx'
 import CssBaseline from '@mui/material/CssBaseline'
 import './index.css'
 
+import { ThemeProvider } from '@mui/material/styles'  
+import { theme } from './theme.js'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <CssBaseline />
-        <App />
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <App />
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>
