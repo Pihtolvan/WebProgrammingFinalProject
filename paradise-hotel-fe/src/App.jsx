@@ -13,6 +13,7 @@ import RequireAdmin from './auth/RequireAdmin.jsx'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx'
 import AdminLocationsPage from './pages/admin/AdminLocationsPage.jsx'
 import AdminRoomsPage from './pages/admin/AdminRoomsPage.jsx'
+import AdminReservationsPage from './pages/admin/AdminReservationsPage.jsx'
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
           <Route path='dashboard' element={<AdminDashboardPage />} />
           <Route path='locations' element={<AdminLocationsPage />}/>
           <Route path='rooms' element={<AdminRoomsPage />} />
+          <Route path='reservations' element={<AdminReservationsPage />} />
         </Route>
       </Route>
     </Routes>

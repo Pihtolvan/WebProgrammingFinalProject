@@ -174,7 +174,7 @@ export default function AdminRoomsPage() {
   return (
     <PageContainer>
       <Stack spacing={2}>
-        <Stack direction='row' justifyContent='space-between' alignItems='center'>
+        <Stack direction='row'sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant='h4'>Rooms</Typography>
           <Button variant='contained' onClick={openCreate}>
             Add room

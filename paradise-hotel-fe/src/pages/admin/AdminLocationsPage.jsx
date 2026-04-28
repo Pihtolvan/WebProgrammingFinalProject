@@ -159,7 +159,7 @@ export default function AdminLocationsPage() {
   return (
     <PageContainer>
       <Stack spacing={2}>
-        <Stack direction='row' justifyContent='space-between' alignItems='center'>
+        <Stack direction='row'sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant='h4'>Locations</Typography>
           <Button variant='contained' onClick={openCreate}>
             Add location

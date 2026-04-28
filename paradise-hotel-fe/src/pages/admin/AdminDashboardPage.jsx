@@ -60,22 +60,22 @@ export default function AdminDashboardPage() {
         ) : data ? (
           <Stack spacing={2}>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <StatCard label='Total reservations' value={data.summary.totalReservations} />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <StatCard label='Active reservations' value={data.summary.activeReservations} />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <StatCard label='Cancelled reservations' value={data.summary.cancelledReservations} />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <StatCard label='Users' value={data.summary.totalUsers} />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <StatCard label='Locations' value={data.summary.totalLocations} />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <StatCard label='Rooms' value={data.summary.totalRooms} />
               </Grid>
             </Grid>

@@ -39,7 +39,7 @@ export default function Navbar() {
                 <Button component={RouterLink} to='/admin/dashboard' color='inherit'>
                   Admin
                 </Button>
-              ) : null}
+              ) : null} 
             </>
           ) : (
             <>
