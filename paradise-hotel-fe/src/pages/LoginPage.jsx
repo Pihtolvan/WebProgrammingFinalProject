@@ -7,6 +7,7 @@ import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Alert from '@mui/material/Alert'
+import Paper from '@mui/material/Paper'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -55,35 +56,33 @@ export default function LoginPage() {
   }
 
   return (
-    <PageContainer>
-      <Typography variant='h4' sx={{ mb: 2 }}>
-        Login
-      </Typography>
+    <PageContainer maxWidth='md'>
+      <Stack spacing={3}  sx={{ textAlign: 'center' }}>
+        <Stack spacing={0.5}>
+          <Typography variant='h4' sx={{ fontWeight: 800 }}>
+            Login
+          </Typography>
+          <Typography color='text.secondary'>
+            Access your account and manage your reservations.
+          </Typography>
+        </Stack>
 
-      {error ? (
-        <Alert severity='error' sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      ) : null}
+        <Paper variant='outlined' sx={{ p: 3, borderRadius: 5 }}>
+          <Stack spacing={2} component='form' onSubmit={onSubmit}>
 
-      <Stack component='form' spacing={2} onSubmit={onSubmit}>
-        <TextField label='Email' name='email' value={form.email} onChange={handleChange} fullWidth />
-        <TextField
-          label='Password'
-          name='password'
-          type='password'
-          value={form.password}
-          onChange={handleChange}
-          fullWidth
-        />
+            {error && <Alert severity='error'>{error}</Alert>}
 
-        <Button type='submit' variant='contained' disabled={submitting}>
-          {submitting ? 'Logging in...' : 'Login'}
-        </Button>
+            <TextField label='Email' name='email' value={form.email} onChange={handleChange}fullWidth/>
+            <TextField label='Password' name='password' type='password' value={form.password} onChange={handleChange} fullWidth/>
 
-        <Button component={RouterLink} to='/register'>
-          Need an account? Register
-        </Button>
+            <Button type='submit' variant='contained' size='large' disabled={submitting}>
+              {submitting ? 'Logging in...' : 'Login'}
+            </Button>
+            <Button component={RouterLink} to='/register' size='small'>
+              Need an account? Register
+            </Button>
+          </Stack>
+        </Paper>
       </Stack>
     </PageContainer>
   )

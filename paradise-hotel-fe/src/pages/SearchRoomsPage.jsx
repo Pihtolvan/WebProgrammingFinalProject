@@ -236,7 +236,6 @@ export default function SearchRoomsPage() {
                 </Stack>
               </Box>
 
-              {/* Wider button: full width of the row on md+ */}
               <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
                 <Button
                   type='submit'
@@ -246,7 +245,7 @@ export default function SearchRoomsPage() {
                   sx={{
                     py: 1.2,
                     borderRadius: 999,
-                    maxWidth: { xs: '100%', md: 520 },
+                    alignSelf: 'center', 
                     mx: { xs: 0, md: 'auto' }
                   }}
                 >
