@@ -6,7 +6,7 @@ export const theme = createTheme({
     primary: { main: '#2F6FED' },
     secondary: { main: '#00A3B4' },
     background: {
-      default: '#EAF2FF',
+      default: '#F3F7FF',
       paper: '#FFFFFF'
     }
   },
@@ -29,14 +29,18 @@ export const theme = createTheme({
       defaultProps: { elevation: 0 },
       styleOverrides: {
         root: {
-          borderRadius: 16
+          borderRadius: 16,
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         }
       }
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 16
+          borderRadius: 16,
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         }
       }
     },
@@ -62,6 +66,17 @@ export const theme = createTheme({
         root: {
           borderRadius: 14,
           backgroundColor: '#FFFFFF'
+        },
+        input: {
+          paddingTop: 14,
+          paddingBottom: 14
+        }
+      }
+    },
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          overflowWrap: 'anywhere'
         }
       }
     },

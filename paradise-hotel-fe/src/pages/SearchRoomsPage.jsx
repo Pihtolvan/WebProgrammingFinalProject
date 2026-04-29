@@ -9,38 +9,45 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
 import Divider from '@mui/material/Divider'
-import Grid from '@mui/material/Grid'
 import Chip from '@mui/material/Chip'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import Box from '@mui/material/Box'
-import Snackbar from '@mui/material/Snackbar'
+import Paper from '@mui/material/Paper'
 
-function groupRoomsByLocation(rooms) {
-  const map = new Map()
+const isHttpUrl = (v) => {
+  const s = String(v ?? '').trim()
+  return s.startsWith('http://') || s.startsWith('https://')
+}
+
+const fallbackLocationImg = (locationId) => `https://picsum.photos/seed/location-${locationId}/1200/900`
+
+const getLocationImageSrc = (location) => {
+  const id = location?.id ?? 'unknown'
+  return isHttpUrl(location?.imageUrl) ? location.imageUrl : fallbackLocationImg(id)
+}
+
+const groupRoomsByLocation = (rooms) => {
+  const byId = new Map()
 
   for (const room of rooms) {
     const locationId = room.location?.id ?? room.locationId
-    if (!map.has(locationId)) {
-      map.set(locationId, {
-        location: room.location,
-        rooms: []
-      })
-    }
-    map.get(locationId).rooms.push(room)
+    const entry = byId.get(locationId) ?? { location: room.location, rooms: [] }
+    entry.rooms.push(room)
+    byId.set(locationId, entry)
   }
 
-  const grouped = Array.from(map.values())
+  const grouped = [...byId.values()]
+
+  // sort locations by rating desc, then name
   grouped.sort((a, b) => {
-    const r1 = a.location?.rating ?? 0
-    const r2 = b.location?.rating ?? 0
-    if (r1 !== r2) return r2 - r1
+    const r = (b.location?.rating ?? 0) - (a.location?.rating ?? 0)
+    if (r !== 0) return r
     return String(a.location?.name ?? '').localeCompare(String(b.location?.name ?? ''))
   })
 
+  // sort rooms by price asc
   for (const g of grouped) {
     g.rooms.sort((a, b) => (a.pricePerNight ?? 0) - (b.pricePerNight ?? 0))
   }
@@ -67,32 +74,12 @@ export default function SearchRoomsPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [rooms, setRooms] = useState([])
-  const [snack, setSnack] = useState({ open: false, message: '' })
 
   const grouped = useMemo(() => groupRoomsByLocation(rooms), [rooms])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
-  }
-
-  const buildParams = () => {
-    const params = new URLSearchParams()
-
-    params.set('checkIn', form.checkIn)
-    params.set('checkOut', form.checkOut)
-    params.set('guests', String(form.guests || 1))
-
-    if (form.search.trim()) params.set('search', form.search.trim())
-    if (form.city.trim()) params.set('city', form.city.trim())
-    if (form.rating !== '') params.set('rating', String(form.rating))
-    if (form.freeParking) params.set('freeParking', 'true')
-    if (form.wellnessCenter) params.set('wellnessCenter', 'true')
-
-    return params
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
   }
 
   const validate = () => {
@@ -101,6 +88,20 @@ export default function SearchRoomsPage() {
     const guests = Number(form.guests)
     if (Number.isNaN(guests) || guests < 1) return 'Guests must be at least 1.'
     return ''
+  }
+
+  const buildParams = () => {
+    const p = new URLSearchParams()
+    p.set('checkIn', form.checkIn)
+    p.set('checkOut', form.checkOut)
+    p.set('guests', String(form.guests || 1))
+
+    if (form.search.trim()) p.set('search', form.search.trim())
+    if (form.city.trim()) p.set('city', form.city.trim())
+    if (form.rating !== '') p.set('rating', String(form.rating))
+    if (form.freeParking) p.set('freeParking', 'true')
+    if (form.wellnessCenter) p.set('wellnessCenter', 'true')
+    return p
   }
 
   const onSubmit = async (e) => {
@@ -112,12 +113,10 @@ export default function SearchRoomsPage() {
 
     try {
       setLoading(true)
-      const params = buildParams()
-      const res = await api.get(`/rooms/availability?${params.toString()}`)
+      const res = await api.get(`/rooms/availability?${buildParams().toString()}`)
       setRooms(res.data.rooms ?? [])
     } catch (err) {
-      const message = err.response?.data?.message ?? 'Failed to load available rooms.'
-      setError(message)
+      setError(err.response?.data?.message ?? 'Failed to load available rooms.')
     } finally {
       setLoading(false)
     }
@@ -126,129 +125,137 @@ export default function SearchRoomsPage() {
   const reserveRoom = async (roomId) => {
     setError('')
 
-    if (!token) {
-      navigate('/login', { state: { from: location } })
-      return
-    }
+    if (!token) return navigate('/login', { state: { from: location } })
 
     const msg = validate()
     if (msg) return setError(msg)
 
-    const payload = {
-      roomId,
-      checkIn: form.checkIn,
-      checkOut: form.checkOut,
-      guests: Number(form.guests || 1)
-    }
-
     try {
-      await api.post('/reservations', payload)
-      setSnack({ open: true, message: 'Reservation created successfully. Redirecting…' })
+      await api.post('/reservations', {
+        roomId,
+        checkIn: form.checkIn,
+        checkOut: form.checkOut,
+        guests: Number(form.guests || 1)
+      })
       navigate('/reservations', { replace: true })
     } catch (err) {
-      const message = err.response?.data?.message ?? 'Failed to create reservation.'
-      setError(message)
+      setError(err.response?.data?.message ?? 'Failed to create reservation.')
     }
   }
 
   return (
     <PageContainer>
-      <Stack spacing={2}>
-        <Typography variant='h4'>Search rooms</Typography>
+      <Stack spacing={2.5}>
+        <Stack spacing={0.5}>
+          <Typography variant='h4' sx={{ fontWeight: 800 }}>
+            Search rooms
+          </Typography>
+          <Typography color='text.secondary'>
+            Select your dates and guests, then filter by city, rating and amenities.
+          </Typography>
+        </Stack>
 
         {error ? <Alert severity='error'>{error}</Alert> : null}
 
-        <Box component='form' onSubmit={onSubmit}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label='Check-in'
-                name='checkIn'
-                type='date'
-                value={form.checkIn}
-                onChange={handleChange}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label='Check-out'
-                name='checkOut'
-                type='date'
-                value={form.checkOut}
-                onChange={handleChange}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label='Guests'
-                name='guests'
-                type='number'
-                value={form.guests}
-                onChange={handleChange}
-                inputProps={{ min: 1 }}
-                fullWidth
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label='City (optional)'
-                name='city'
-                value={form.city}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label='Min rating (1-5)'
-                name='rating'
-                type='number'
-                value={form.rating}
-                onChange={handleChange}
-                inputProps={{ min: 1, max: 5, step: 0.1 }}
-                fullWidth
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label='Search hotel name (optional)'
-                name='search'
-                value={form.search}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Stack direction='row' spacing={2} sx={{ flexWrap: 'wrap' }}>
-                <FormControlLabel
-                  control={<Checkbox name='freeParking' checked={form.freeParking} onChange={handleChange} />}
-                  label='Free parking'
+        <Paper variant='outlined' sx={{ p: { xs: 2.5, sm: 3.5 }, borderRadius: 6 }}>
+          <Box component='form' onSubmit={onSubmit}>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(12, 1fr)' },
+                alignItems: 'center'
+              }}
+            >
+              <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto', md: 'span 3' } }}>
+                <TextField
+                  label='Check-in'
+                  name='checkIn'
+                  type='date'
+                  value={form.checkIn}
+                  onChange={handleChange}
+                  fullWidth
+                  slotProps={{ inputLabel: { shrink: true } }}
                 />
+              </Box>
 
-                <FormControlLabel
-                  control={<Checkbox name='wellnessCenter' checked={form.wellnessCenter} onChange={handleChange} />}
-                  label='Wellness center'
+              <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto', md: 'span 3' } }}>
+                <TextField
+                  label='Check-out'
+                  name='checkOut'
+                  type='date'
+                  value={form.checkOut}
+                  onChange={handleChange}
+                  fullWidth
+                  slotProps={{ inputLabel: { shrink: true } }}
                 />
-              </Stack>
-            </Grid>
+              </Box>
 
-            <Grid item xs={12}>
-              <Button type='submit' variant='contained' disabled={loading}>
-                {loading ? 'Searching...' : 'Search availability'}
-              </Button>
-            </Grid>
-          </Grid>
-        </Box>
+              <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto', md: 'span 2' } }}>
+                <TextField
+                  label='Guests'
+                  name='guests'
+                  type='number'
+                  value={form.guests}
+                  onChange={handleChange}
+                  fullWidth
+                  slotProps={{ input: { inputProps: { min: 1 } } }}
+                />
+              </Box>
+
+              <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto', md: 'span 4' } }}>
+                <TextField label='Hotel name' name='search' value={form.search} onChange={handleChange} fullWidth />
+              </Box>
+
+              <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto', md: 'span 4' } }}>
+                <TextField label='City' name='city' value={form.city} onChange={handleChange} fullWidth />
+              </Box>
+
+              <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto', md: 'span 2' } }}>
+                <TextField
+                  label='Min rating'
+                  name='rating'
+                  type='number'
+                  value={form.rating}
+                  onChange={handleChange}
+                  fullWidth
+                  slotProps={{ input: { inputProps: { min: 1, max: 5, step: 0.1 } } }}
+                />
+              </Box>
+
+              <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 6' } }}>
+                <Stack direction='row' spacing={2} sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+                  <FormControlLabel
+                    control={<Checkbox name='freeParking' checked={form.freeParking} onChange={handleChange} />}
+                    label='Free parking'
+                  />
+                  <FormControlLabel
+                    control={<Checkbox name='wellnessCenter' checked={form.wellnessCenter} onChange={handleChange} />}
+                    label='Wellness center'
+                  />
+                </Stack>
+              </Box>
+
+              {/* Wider button: full width of the row on md+ */}
+              <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
+                <Button
+                  type='submit'
+                  variant='contained'
+                  disabled={loading}
+                  fullWidth
+                  sx={{
+                    py: 1.2,
+                    borderRadius: 999,
+                    maxWidth: { xs: '100%', md: 520 },
+                    mx: { xs: 0, md: 'auto' }
+                  }}
+                >
+                  {loading ? 'Searching…' : 'Search availability'}
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
 
         <Divider />
 
@@ -257,64 +264,129 @@ export default function SearchRoomsPage() {
             No rooms loaded yet. Select dates and click “Search availability”.
           </Typography>
         ) : (
-          <Stack spacing={3}>
+          <Stack spacing={2.5}>
             <Typography color='text.secondary'>
               Found {rooms.length} available room{rooms.length === 1 ? '' : 's'}.
             </Typography>
 
-            {grouped.map((group) => (
-              <Card key={group.location?.id ?? group.location?.name} variant='outlined'>
-                <CardContent>
-                  <Stack spacing={2}>
-                    <Stack spacing={0.5}>
-                      <Typography variant='h5'>{group.location?.name}</Typography>
-                      <Typography color='text.secondary'>
-                        {group.location?.city} • {group.location?.address}
-                      </Typography>
+            <Stack spacing={2}>
+              {grouped.map((group) => {
+                const loc = group.location
+                const imgSrc = getLocationImageSrc(loc)
+                const fallback = fallbackLocationImg(loc?.id ?? 'unknown')
 
-                      <Stack direction='row' spacing={1} sx={{ flexWrap: 'wrap' }}>
-                        <Chip label={`Rating: ${group.location?.rating ?? 'N/A'}`} size='small' />
-                        {group.location?.hasFreeParking ? <Chip label='Free parking' size='small' /> : null}
-                        {group.location?.hasWellnessCenter ? <Chip label='Wellness center' size='small' /> : null}
-                      </Stack>
-                    </Stack>
+                return (
+                  <Paper key={loc?.id ?? loc?.name} variant='outlined' sx={{ p: { xs: 4, sm: 4.5 }, borderRadius: 6 }}>
+                    <Stack spacing={2.5}>
+                      <Box sx={{ display: 'grid', gap: 3, alignItems: 'start', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
+                        <Stack spacing={1.1} sx={{ minWidth: 0 }}>
+                          <Typography variant='h5' sx={{ fontWeight: 800, wordBreak: 'break-word' }}>
+                            {loc?.name}
+                          </Typography>
 
-                    <Divider />
+                          <Typography color='text.secondary' sx={{ wordBreak: 'break-word' }}>
+                            {loc?.city} • {loc?.address}
+                          </Typography>
 
-                    <Grid container spacing={2}>
-                      {group.rooms.map((room) => (
-                        <Grid item xs={12} md={6} key={room.id}>
-                          <Card variant='outlined'>
-                            <CardContent>
-                              <Stack spacing={1}>
-                                <Typography variant='h6'>{room.name}</Typography>
-                                <Typography color='text.secondary'>
-                                  {room.type} • Capacity: {room.capacity}
-                                </Typography>
-                                <Typography>€{room.pricePerNight} / night</Typography>
+                          <Stack direction='row' spacing={1} sx={{ flexWrap: 'wrap' }}>
+                            <Chip label={`★ ${loc?.rating ?? '—'}`} size='small' variant='outlined' color='primary' />
+                            {loc?.hasFreeParking ? <Chip label='Free parking' size='small' /> : null}
+                            {loc?.hasWellnessCenter ? <Chip label='Wellness center' size='small' /> : null}
+                          </Stack>
 
-                                <Button variant='contained' onClick={() => reserveRoom(room.id)}>
-                                  Reserve
-                                </Button>
+                          {loc?.description ? (
+                            <Typography
+                              color='text.secondary'
+                              variant='body2'
+                              sx={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden'
+                              }}
+                            >
+                              {loc.description}
+                            </Typography>
+                          ) : null}
+                        </Stack>
+
+                        <Box
+                          sx={{
+                            width: '100%',
+                            aspectRatio: '4 / 3',
+                            borderRadius: 6,
+                            overflow: 'hidden',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            bgcolor: 'background.default'
+                          }}
+                        >
+                          <Box
+                            component='img'
+                            src={imgSrc}
+                            alt={loc?.name ?? 'Hotel'}
+                            loading='lazy'
+                            onError={(e) => {
+                              if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback
+                            }}
+                            sx={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
+                          />
+                        </Box>
+                      </Box>
+
+                      <Divider />
+
+                      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
+                        {group.rooms.map((room) => (
+                          <Paper
+                            key={room.id}
+                            variant='outlined'
+                            sx={{ p: { xs: 3.5, sm: 4 }, borderRadius: 5, height: '100%', boxSizing: 'border-box' }}
+                          >
+                            <Stack spacing={1.75} sx={{ height: '100%' }}>
+                              <Stack direction='row' sx={{ alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5, minWidth: 0 }}>
+                                <Box sx={{ minWidth: 0 }}>
+                                  <Typography
+                                    variant='h6'
+                                    sx={{ fontWeight: 700, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                    title={room.name}
+                                  >
+                                    {room.name}
+                                  </Typography>
+                                  <Typography color='text.secondary'>
+                                    {room.type} • Capacity: {room.capacity}
+                                  </Typography>
+                                </Box>
+
+                                <Chip label={`€${room.pricePerNight} / night`} color='primary' variant='outlined' sx={{ flexShrink: 0 }} />
                               </Stack>
-                            </CardContent>
-                          </Card>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
+
+                              {room.description ? (
+                                <Typography
+                                  color='text.secondary'
+                                  variant='body2'
+                                  sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                                >
+                                  {room.description}
+                                </Typography>
+                              ) : null}
+
+                              <Box sx={{ flex: 1 }} />
+
+                              <Button variant='contained' onClick={() => reserveRoom(room.id)} sx={{ alignSelf: 'flex-start' }}>
+                                Reserve
+                              </Button>
+                            </Stack>
+                          </Paper>
+                        ))}
+                      </Box>
+                    </Stack>
+                  </Paper>
+                )
+              })}
+            </Stack>
           </Stack>
         )}
-
-        <Snackbar
-          open={snack.open}
-          autoHideDuration={3000}
-          onClose={() => setSnack({ open: false, message: '' })}
-          message={snack.message}
-        />
       </Stack>
     </PageContainer>
   )
